@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vikhyat Sachin Damir — Video Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0B0D;
+    --bg-panel:#131316;
+    --bg-panel-2:#19191D;
+    --ink:#F2F0EA;
+    --ink-dim:#9A9AA2;
+    --ink-faint:#5B5B61;
+    --cyan:#33E1E6;
+    --magenta:#FF3D8A;
+    --line:#28282C;
+    --radius:2px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background:var(--magenta); color:#0B0B0D; }
+
+  h1,h2,h3{
+    font-family:'Bebas Neue', sans-serif;
+    letter-spacing:0.01em;
+    font-weight:400;
+    line-height:0.95;
+  }
+
+  .wrap{ max-width:1040px; margin:0 auto; padding:0 32px; }
+
+  /* ---------- timecode scrubber (nav) ---------- */
+  .scrubber{
+    position:sticky; top:0; z-index:50;
+    background:rgba(11,11,13,0.92);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--line);
+  }
+  .scrubber-inner{
+    max-width:1040px; margin:0 auto; padding:14px 32px;
+    display:flex; align-items:center; gap:0;
+    overflow-x:auto;
+  }
+  .scrubber-mark{
+    font-family:'Inter', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size:12px;
+    color:var(--ink-faint);
+    text-decoration:none;
+    white-space:nowrap;
+    padding:6px 14px;
+    border-left:1px solid var(--line);
+    transition:color .15s ease;
+  }
+  .scrubber-mark:first-child{ border-left:none; padding-left:0; }
+  .scrubber-mark:hover{ color:var(--cyan); }
+  .scrubber-mark span{ color:var(--ink-dim); margin-right:6px; }
+
+  /* ---------- hero ---------- */
+  .hero{
+    padding:110px 0 90px;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero-tag{
+    font-family:'Inter', monospace;
+    font-size:13px;
+    color:var(--ink-faint);
+    display:flex; align-items:center; gap:10px;
+    margin-bottom:28px;
+  }
+  .rec-dot{
+    width:8px; height:8px; border-radius:50%;
+    background:var(--magenta);
+    box-shadow:0 0 0 0 rgba(255,61,138,0.5);
+    animation:pulse 2s infinite;
+  }
+  @keyframes pulse{
+    0%{ box-shadow:0 0 0 0 rgba(255,61,138,0.45); }
+    70%{ box-shadow:0 0 0 8px rgba(255,61,138,0); }
+    100%{ box-shadow:0 0 0 0 rgba(255,61,138,0); }
+  }
+  .hero h1{
+    font-size:clamp(58px, 11vw, 118px);
+    color:var(--ink);
+  }
+  .hero h1 .accent{ color:var(--cyan); }
+  .hero-sub{
+    max-width:520px;
+    margin-top:22px;
+    font-size:17px;
+    color:var(--ink-dim);
+  }
+  .hero-meta{
+    display:flex; gap:36px; margin-top:56px; flex-wrap:wrap;
+  }
+  .hero-meta div{ border-top:1px solid var(--line); padding-top:12px; min-width:140px; }
+  .hero-meta .num{
+    font-family:'Bebas Neue', sans-serif;
+    font-size:30px; color:var(--magenta); display:block;
+  }
+  .hero-meta .lbl{ font-size:12px; color:var(--ink-faint); }
+
+  /* film-strip accent behind hero */
+  .strip{
+    position:absolute; right:-60px; top:60px;
+    display:flex; flex-direction:column; gap:6px;
+    opacity:0.5;
+  }
+  .strip .frame{
+    width:64px; height:38px; border:1px solid var(--line);
+    background:linear-gradient(135deg, rgba(51,225,230,0.08), rgba(255,61,138,0.08));
+  }
+
+  /* ---------- section shell ---------- */
+  section{ padding:80px 0; border-top:1px solid var(--line); }
+  .section-head{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    margin-bottom:44px; gap:20px; flex-wrap:wrap;
+  }
+  .section-head h2{ font-size:44px; }
+  .section-head .code{
+    font-family:'Inter', monospace; font-size:12px; color:var(--ink-faint);
+  }
+
+  /* ---------- about ---------- */
+  .about-grid{
+    display:grid; grid-template-columns:1.3fr 1fr; gap:56px;
+  }
+  .about-grid p{ color:var(--ink-dim); font-size:16px; max-width:52ch; }
+  .about-grid p + p{ margin-top:16px; }
+  .role-list{ list-style:none; margin-top:28px; }
+  .role-list li{
+    display:flex; gap:14px; padding:10px 0;
+    border-bottom:1px solid var(--line);
+    font-size:14px; color:var(--ink);
+  }
+  .role-list li::before{
+    content:"";
+    width:6px; height:6px; margin-top:7px; flex-shrink:0;
+    background:var(--cyan);
+  }
+  .id-card{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    padding:24px;
+    font-family:'Inter', monospace;
+    font-size:13px;
+    color:var(--ink-dim);
+    height:fit-content;
+  }
+  .id-card .row{ display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); }
+  .id-card .row:last-child{ border-bottom:none; }
+  .id-card .row b{ color:var(--ink); font-weight:500; text-align:right; }
+
+  /* ---------- gallery ---------- */
+  .gallery{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:2px;
+    background:var(--line);
+  }
+  .tile{
+    background:var(--bg-panel);
+    aspect-ratio:4/3;
+    position:relative;
+    padding:18px;
+    display:flex; flex-direction:column; justify-content:space-between;
+    overflow:hidden;
+  }
+  .tile.wide{ grid-column:span 2; }
+  .tile .tile-top{
+    font-family:'Inter', monospace; font-size:11px; color:var(--ink-faint);
+    display:flex; justify-content:space-between;
+  }
+  .tile .tile-title{
+    font-family:'Bebas Neue', sans-serif; font-size:26px; color:var(--ink);
+  }
+  .tile .tile-note{ font-size:13px; color:var(--ink-dim); max-width:32ch; }
+  .tile::after{
+    content:"";
+    position:absolute; inset:0;
+    background:radial-gradient(circle at 30% 20%, rgba(51,225,230,0.10), transparent 60%);
+    pointer-events:none;
+  }
+  .tile.pink::after{
+    background:radial-gradient(circle at 70% 80%, rgba(255,61,138,0.12), transparent 60%);
+  }
+  .stat-row{ display:flex; gap:22px; margin-top:6px; }
+  .stat-row .stat b{ display:block; font-family:'Bebas Neue'; font-size:28px; color:var(--cyan); }
+  .stat-row .stat span{ font-size:11px; color:var(--ink-faint); font-family:'Inter', monospace; }
+
+  /* ---------- reel (video embeds) ---------- */
+  .reel{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:2px;
+    background:var(--line);
+    margin-bottom:2px;
+  }
+  .reel-card{
+    background:var(--bg-panel);
+    display:flex; flex-direction:column;
+  }
+  .reel-card.span2{ grid-column:span 2; }
+  .video-frame{ position:relative; width:100%; padding-top:56.25%; background:#000; }
+  .video-frame.vertical{ padding-top:177.78%; }
+  .reel-card.span2 .video-frame{ padding-top:56.25%; }
+  .video-frame iframe{
+    position:absolute; inset:0; width:100%; height:100%; border:0;
+  }
+  .reel-meta{ padding:16px 18px 20px; }
+  .reel-meta .tile-top{
+    font-family:'Inter', monospace; font-size:11px; color:var(--ink-faint);
+    display:flex; justify-content:space-between; margin-bottom:8px;
+  }
+  .reel-meta p{ font-size:13.5px; color:var(--ink-dim); }
+
+  /* ---------- services (timeline track) ---------- */
+  .track{ position:relative; padding-left:28px; }
+  .track::before{
+    content:""; position:absolute; left:6px; top:6px; bottom:6px;
+    width:1px; background:var(--line);
+  }
+  .track-item{ position:relative; padding-bottom:38px; }
+  .track-item:last-child{ padding-bottom:0; }
+  .track-item::before{
+    content:""; position:absolute; left:-28px; top:4px;
+    width:11px; height:11px; border-radius:50%;
+    background:var(--bg); border:2px solid var(--magenta);
+  }
+  .track-item .tcode{ font-family:'Inter', monospace; font-size:12px; color:var(--ink-faint); }
+  .track-item h3{ font-size:26px; margin:6px 0 8px; color:var(--ink); }
+  .track-item p{ color:var(--ink-dim); font-size:15px; max-width:56ch; }
+
+  /* ---------- contact ---------- */
+  .contact{
+    display:grid; grid-template-columns:1.2fr 1fr; gap:56px; align-items:end;
+  }
+  .contact h2{ font-size:56px; max-width:12ch; }
+  .contact-links{ display:flex; flex-direction:column; gap:0; }
+  .contact-links a{
+    color:var(--ink); text-decoration:none;
+    display:flex; justify-content:space-between; align-items:center;
+    padding:16px 0; border-top:1px solid var(--line);
+    font-size:15px;
+    transition:color .15s ease;
+  }
+  .contact-links a:last-child{ border-bottom:1px solid var(--line); }
+  .contact-links a span.k{ font-family:'Inter', monospace; font-size:11px; color:var(--ink-faint); }
+  .contact-links a:hover{ color:var(--cyan); }
+
+  footer{
+    padding:26px 0 50px;
+    font-family:'Inter', monospace; font-size:11px; color:var(--ink-faint);
+    display:flex; justify-content:space-between;
+    border-top:1px solid var(--line);
+  }
+
+  @media (max-width:720px){
+    .about-grid, .contact{ grid-template-columns:1fr; }
+    .gallery{ grid-template-columns:1fr 1fr; }
+    .tile.wide{ grid-column:span 2; }
+    .reel{ grid-template-columns:1fr 1fr; }
+    .reel-card.span2{ grid-column:span 2; }
+    .strip{ display:none; }
+    .hero{ padding:70px 0 60px; }
+  }
+</style>
+</head>
+<body>
+
+  <nav class="scrubber">
+    <div class="scrubber-inner">
+      <a class="scrubber-mark" href="#top"><span>00:00</span>INTRO</a>
+      <a class="scrubber-mark" href="#about"><span>00:12</span>ABOUT</a>
+      <a class="scrubber-mark" href="#work"><span>00:34</span>WORK</a>
+      <a class="scrubber-mark" href="#services"><span>00:58</span>SERVICES</a>
+      <a class="scrubber-mark" href="#contact"><span>01:20</span>CONTACT</a>
+    </div>
+  </nav>
+
+  <div id="top" class="wrap hero">
+    <div class="strip">
+      <div class="frame"></div><div class="frame"></div><div class="frame"></div>
+      <div class="frame"></div><div class="frame"></div><div class="frame"></div>
+    </div>
+    <div class="hero-tag"><span class="rec-dot"></span>NOW EDITING — DELHI, IN</div>
+    <h1>Vikhyat<br>Sachin <span class="accent">Damir</span></h1>
+    <p class="hero-sub">Video editor and content creator building short-form content, thumbnails, and channel growth for @I_M_VICC — currently studying B.Com (P) at Satyawati College, University of Delhi.</p>
+    <div class="hero-meta">
+      <div><span class="num">1st Yr</span><span class="lbl">UNDERGRAD, DELHI UNIVERSITY</span></div>
+      <div><span class="num">Shorts</span><span class="lbl">PRIMARY FORMAT</span></div>
+      <div><span class="num">PS + PR</span><span class="lbl">CORE TOOLS</span></div>
+    </div>
+  </div>
+
+  <section id="about" class="wrap">
+    <div class="section-head">
+      <h2>About</h2>
+      <div class="code">TRACK 01 / PROFILE</div>
+    </div>
+    <div class="about-grid">
+      <div>
+        <p>I'm Vikhyat — I edit, design thumbnails, and grow a YouTube channel under the handle @I_M_VICC. I like taking a raw idea or clip and shaping it into something that actually holds attention, whether that's a dance edit, a gaming highlight, or a short built for a brand.</p>
+        <p>Alongside editing I also write scripts — for product promos, channel content, and anything that needs a clear hook before the camera even rolls.</p>
+        <ul class="role-list">
+          <li>Short-form & long-form video editing</li>
+          <li>Thumbnail design in Photoshop</li>
+          <li>Scriptwriting for promo & content videos</li>
+          <li>Channel growth via Instagram & YouTube</li>
+        </ul>
+      </div>
+      <div class="id-card">
+        <div class="row"><span>NAME</span><b>Vikhyat S. Damir</b></div>
+        <div class="row"><span>HANDLE</span><b>@I_M_VICC</b></div>
+        <div class="row"><span>COLLEGE</span><b>Satyawati College, DU</b></div>
+        <div class="row"><span>COURSE</span><b>B.Com (P), Year 1</b></div>
+        <div class="row"><span>EDITS IN</span><b>Photoshop, Premiere</b></div>
+        <div class="row"><span>BASED IN</span><b>Delhi, India</b></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="work" class="wrap">
+    <div class="section-head">
+      <h2>Selected Work</h2>
+      <div class="code">TRACK 02 / GALLERY</div>
+    </div>
+    <div class="reel">
+      <div class="reel-card span2">
+        <div class="video-frame">
+          <iframe src="https://www.youtube.com/embed/pv6d3d3P6-Q" title="Edit with music choice" allowfullscreen loading="lazy"></iframe>
+        </div>
+        <div class="reel-meta">
+          <div class="tile-top"><span>EDIT 01</span><span>SOUND</span></div>
+          <p>Music choice drives the whole cut — pacing follows the track instead of fighting it.</p>
+        </div>
+      </div>
+      <div class="reel-card span2">
+        <div class="video-frame">
+          <iframe src="https://www.youtube.com/embed/mCUATVOptKc?start=162" title="Edit with meme and sound timing" allowfullscreen loading="lazy"></iframe>
+        </div>
+        <div class="reel-meta">
+          <div class="tile-top"><span>EDIT 02</span><span>COMEDY TIMING</span></div>
+          <p>Memes and sound effects landed right on the beat — built for rewatch value.</p>
+        </div>
+      </div>
+      <div class="reel-card span2">
+        <div class="video-frame">
+          <iframe src="https://www.youtube.com/embed/DK4QG2sZki0" title="Top performing channel video" allowfullscreen loading="lazy"></iframe>
+        </div>
+        <div class="reel-meta">
+          <div class="tile-top"><span>EDIT 03</span><span>TOP PERFORMER</span></div>
+          <p>Most-viewed upload on the channel to date.</p>
+        </div>
+      </div>
+      <div class="reel-card">
+        <div class="video-frame vertical">
+          <iframe src="https://www.youtube.com/embed/ZL9aT0fR97A" title="10k view Short" allowfullscreen loading="lazy"></iframe>
+        </div>
+        <div class="reel-meta">
+          <div class="tile-top"><span>SHORT</span><span>10K+ VIEWS</span></div>
+          <p>Vertical short that crossed 10,000 views.</p>
+        </div>
+      </div>
+      <div class="reel-card">
+        <div class="video-frame" style="background:linear-gradient(135deg, rgba(51,225,230,0.12), rgba(255,61,138,0.14)); display:flex; align-items:center; justify-content:center;">
+          <span style="font-family:'Bebas Neue', sans-serif; font-size:36px; color:var(--ink);">VENOM</span>
+        </div>
+        <div class="reel-meta">
+          <div class="tile-top"><span>THUMBNAIL</span><span>.PSD</span></div>
+          <p>Self-designed thumbnail, built frame-by-frame in Photoshop.</p>
+        </div>
+      </div>
+    </div>
+    <div class="gallery">
+      <div class="tile wide">
+        <div class="tile-top"><span>CHANNEL ANALYTICS</span><span>LAST 28 DAYS</span></div>
+        <div>
+          <div class="tile-title">Audience Insight</div>
+          <div class="stat-row">
+            <div class="stat"><b>65</b><span>VIEWS</span></div>
+            <div class="stat"><b>0.3h</b><span>WATCH TIME</span></div>
+            <div class="stat"><b>Shorts</b><span>TOP FORMAT</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="tile pink">
+        <div class="tile-top"><span>STRATEGY</span><span>SHORTS</span></div>
+        <div>
+          <div class="tile-title">Format Shift</div>
+          <div class="tile-note">Audience leaned heavily toward Shorts — content plan adjusted around that.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="services" class="wrap">
+    <div class="section-head">
+      <h2>What I Do</h2>
+      <div class="code">TRACK 03 / SERVICES</div>
+    </div>
+    <div class="track">
+      <div class="track-item">
+        <div class="tcode">00:00:04:12</div>
+        <h3>Editing</h3>
+        <p>Cutting raw footage into paced, watchable edits — dance clips, gaming moments, and Shorts built for retention.</p>
+      </div>
+      <div class="track-item">
+        <div class="tcode">00:00:11:03</div>
+        <h3>Thumbnail Design</h3>
+        <p>Custom thumbnails designed in Photoshop, built to stop the scroll without misleading the viewer.</p>
+      </div>
+      <div class="track-item">
+        <div class="tcode">00:00:19:20</div>
+        <h3>Scriptwriting</h3>
+        <p>Scripts for promotional and content videos — a clear hook, a clean structure, a reason to keep watching.</p>
+      </div>
+      <div class="track-item">
+        <div class="tcode">00:00:27:08</div>
+        <h3>Channel Growth</h3>
+        <p>Distributing finished work across Instagram and YouTube to build an audience around it, not just post and hope.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" class="wrap">
+    <div class="contact">
+      <h2>Let's cut something together.</h2>
+      <div class="contact-links">
+        <a href="mailto:vikhyatsachin15@gmail.com"><span>vikhyatsachin15@gmail.com</span><span class="k">EMAIL</span></a>
+        <a href="tel:+919759017000"><span>+91 97590 17000</span><span class="k">PHONE</span></a>
+        <a href="https://youtube.com/@I_M_VICC" target="_blank"><span>@I_M_VICC</span><span class="k">YOUTUBE</span></a>
+        <a href="#" target="_blank"><span>@I_M_VICC</span><span class="k">INSTAGRAM</span></a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="wrap">
+    <span>VIKHYAT SACHIN DAMIR © 2026</span>
+    <span>END OF REEL</span>
+  </footer>
+
+</body>
+</html>
